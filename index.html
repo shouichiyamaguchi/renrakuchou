@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>連絡帳くん</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        textarea, input[type=text] { width: 100%; margin-bottom: 10px; }
+        textarea { height: 80px; }
+        input[type=text] { height: 30px; }
+        button { padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>連絡帳くん</h1>
+    <p>各項目にキーワードや短文を入力してください。</p>
+
+    <input type="text" placeholder="利用者の名前">
+    <textarea placeholder="来所時の様子"></textarea>
+    <textarea placeholder="学校お迎え時の様子"></textarea>
+    <textarea placeholder="昼食・おやつの様子"></textarea>
+    <textarea placeholder="自由時間の過ごし方"></textarea>
+    <textarea placeholder="個別支援の取り組み"></textarea>
+    <textarea placeholder="本日のプログラム内容"></textarea>
+    <textarea placeholder="プログラム中の様子・エピソード"></textarea>
+    <textarea placeholder="帰りの活動（終わりの会・帰宅前の様子）"></textarea>
+    <textarea placeholder="保護者への一言メッセージ"></textarea>
+
+    <button onclick="generateText()">文章をつくる</button>
+    <h2>作成された文章：</h2>
+    <div id="output" style="padding: 10px; border: 1px solid #ccc;"></div>
+    <button onclick="copyText()">コピーする</button>
+
+    <script>
+        function generateText() {
+            let inputs = document.querySelectorAll('textarea');
+            let nameInput = document.querySelector('input[type=text]').value;
+            let output = `保護者向けの連絡帳の作成依頼です。読みやすく丁寧な文章に添削をお願いします。箇条書きではなく、一つの文章にしてください。
+
+${nameInput}さんの今日の様子をご報告します。
+
+来所時の様子：${inputs[0].value}
+学校お迎え時の様子：${inputs[1].value}
+昼食・おやつの様子：${inputs[2].value}
+自由時間の過ごし方：${inputs[3].value}
+個別支援の取り組み：${inputs[4].value}
+本日のプログラム内容：${inputs[5].value}
+プログラム中の様子：${inputs[6].value}
+帰りの活動：${inputs[7].value}
+保護者への一言メッセージ：${inputs[8].value}`;
+            document.getElementById('output').innerText = output;
+        }
+
+        function copyText() {
+            navigator.clipboard.writeText(document.getElementById('output').innerText).then(() => {
+                alert('コピーしました！');
+            });
+        }
+    </script>
+</body>
+</html>
