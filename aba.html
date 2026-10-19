@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ABC分析サポート</title>
+    <style>
+        :root {
+            --bg: #f6f7f9;
+            --card: #ffffff;
+            --text: #222;
+            --muted: #666;
+            --border: #d9dce1;
+            --a: #2f80ed;
+            --b: #eb5757;
+            --c: #27ae60;
+            --accent: #6c5ce7;
+            --warn-bg: #fff8e1;
+            --warn-border: #f2c94c;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, Arial, sans-serif;
+            margin: 0; padding: 16px; background: var(--bg); color: var(--text); line-height: 1.6;
+        }
+        main { max-width: 860px; margin: 0 auto; }
+        h1 { font-size: 1.5rem; margin: 8px 0 4px; }
+        h2 { font-size: 1.15rem; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+        h3 { font-size: 1rem; margin: 16px 0 8px; }
+        .lead { color: var(--muted); margin: 0 0 16px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+        .step { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: .85rem; flex-shrink: 0; }
+        label { display: block; font-weight: bold; margin: 10px 0 4px; }
+        .hint { font-weight: normal; color: var(--muted); font-size: .85rem; }
+        input[type=text], textarea, select {
+            width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; font-family: inherit;
+        }
+        textarea { min-height: 64px; resize: vertical; }
+        button { padding: 10px 14px; border: none; border-radius: 6px; background: var(--accent); color: #fff; font-size: .95rem; cursor: pointer; font-family: inherit; }
+        button.sub { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+        button.small { padding: 4px 10px; font-size: .85rem; }
+        .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .abc { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .abc-box { border-left: 6px solid; padding: 4px 0 4px 10px; }
+        .abc-box.a { border-color: var(--a); }
+        .abc-box.b { border-color: var(--b); }
+        .abc-box.c { border-color: var(--c); }
+        .tag { display: inline-block; font-weight: bold; color: #fff; border-radius: 4px; padding: 0 6px; margin-right: 4px; font-size: .85rem; }
+        .tag.a { background: var(--a); } .tag.b { background: var(--b); } .tag.c { background: var(--c); }
+        .checks label { font-weight: normal; display: inline-flex; align-items: center; gap: 4px; margin: 4px 12px 4px 0; }
+        .q { border-bottom: 1px dashed var(--border); padding: 8px 0; }
+        .q:last-child { border-bottom: none; }
+        .q-text { margin-bottom: 4px; }
+        .q-opts { display: flex; gap: 4px; flex-wrap: wrap; }
+        .q-opts label { font-weight: normal; margin: 0; display: inline-flex; align-items: center; gap: 2px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 14px; font-size: .85rem; cursor: pointer; }
+        .q-opts input { margin: 0; }
+        .q-opts label:has(input:checked) { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .fn-title { font-weight: bold; margin-top: 12px; }
+        .bar-wrap { margin: 6px 0; }
+        .bar-label { display: flex; justify-content: space-between; font-size: .9rem; }
+        .bar { height: 14px; background: #eceef2; border-radius: 7px; overflow: hidden; }
+        .bar > span { display: block; height: 100%; background: var(--accent); }
+        .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 8px; padding: 10px 12px; margin: 12px 0; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+        .chip { background: #f0eefc; color: #3d2fa8; border: 1px solid #d6d1f7; border-radius: 14px; padding: 3px 10px; font-size: .85rem; cursor: pointer; }
+        .chip:hover { background: #e2ddfb; }
+        .ba { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .ba-col { border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+        .ba-col h3 { margin-top: 0; }
+        .ba-item { margin: 4px 0; }
+        #prompt { white-space: pre-wrap; background: #fafafa; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: .9rem; max-height: 360px; overflow: auto; }
+        .records li { margin: 4px 0; }
+        .muted { color: var(--muted); font-size: .85rem; }
+        ul.tips { margin: 4px 0; padding-left: 1.3em; }
+        @media (min-width: 720px) {
+            .ba { grid-template-columns: 1fr 1fr; }
+        }
+        @media print {
+            body { background: #fff; }
+            .no-print, button, .chips { display: none !important; }
+            .card { break-inside: avoid; border-color: #aaa; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <div class="no-print muted"><a href="index.html">← 連絡帳くんへ</a></div>
+    <h1>ABC分析サポート</h1>
+    <p class="lead">児童発達支援・放課後等デイサービス向け。行動を「A きっかけ → B 行動 → C 結果」で整理し、行動の目的（機能）を見立てて、支援のアイディア（仮説）をAIと一緒に考えるためのツールです。</p>
+
+    <div class="card no-print">
+        <div class="row">
+            <span class="muted">例を読み込む：</span>
+            <button class="sub small" onclick="loadExample(0)">買い物で癇癪</button>
+            <button class="sub small" onclick="loadExample(1)">補食とプログラム拒否</button>
+            <button class="sub small" onclick="resetAll()">クリア</button>
+        </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <section class="card">
+        <h2><span class="step">1</span>ABCを書き出す</h2>
+        <div class="row">
+            <div style="flex:1;min-width:140px">
+                <label for="child">対象児 <span class="hint">（イニシャル推奨）</span></label>
+                <input type="text" id="child" placeholder="例：Aくん（小2）">
+            </div>
+            <div style="flex:1;min-width:140px">
+                <label for="scene">場面・日時</label>
+                <input type="text" id="scene" placeholder="例：10/18 来所後〜プログラム開始">
+            </div>
+        </div>
+        <div class="abc">
+            <div class="abc-box a">
+                <label for="a"><span class="tag a">A</span>きっかけ（直前に何があった？）</label>
+                <textarea id="a" placeholder="例：プログラムが始まることを伝えた"></textarea>
+            </div>
+            <div class="abc-box b">
+                <label for="b"><span class="tag b">B</span>行動（見たまま・具体的に）</label>
+                <textarea id="b" placeholder="例：補食が食べたいと言ってプログラム参加を拒否し、泣き叫んだ（約10分）"></textarea>
+            </div>
+            <div class="abc-box c">
+                <label for="c"><span class="tag c">C</span>結果（行動の直後、本人にとって何が起きた？）</label>
+                <textarea id="c" placeholder="例：プログラムに参加しなかった／補食を食べた"></textarea>
+                <div class="checks"><label><input type="checkbox" id="cUnclear"> Cがはっきりしない（何が報酬になっているかわからない）</label></div>
+            </div>
+        </div>
+        <label>行動の起こり方</label>
+        <div class="row">
+            <select id="freq" style="flex:1;min-width:140px">
+                <option value="">頻度を選ぶ</option>
+                <option>初めて見た</option>
+                <option>ときどき（月に数回）</option>
+                <option>よくある（週に数回）</option>
+                <option>ほぼ毎回</option>
+            </select>
+            <select id="intensity" style="flex:1;min-width:140px">
+                <option value="">強さを選ぶ</option>
+                <option>軽い（声かけでおさまる）</option>
+                <option>中くらい（数分続く）</option>
+                <option>強い（長く続く・物や人に向かう）</option>
+            </select>
+        </div>
+        <label>背景にありそうなこと <span class="hint">（セッティング事象：Aより前から影響しているもの）</span></label>
+        <div class="checks" id="setting"></div>
+        <input type="text" id="settingOther" placeholder="その他（例：学校で友だちとトラブルがあった）">
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="card">
+        <h2><span class="step">2</span>行動の目的（機能）を見立てる</h2>
+        <p class="muted">ふだんの様子も思い出して答えてください。わからない項目は「？」のままでOK。行動の目的は大きく4つに分けられます。</p>
+        <div id="questions"></div>
+        <div class="row" style="margin-top:12px"><button onclick="analyze()">見立てる</button></div>
+        <div id="result"></div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="card">
+        <h2><span class="step">3</span>支援の仮説を立てる（Before → After）</h2>
+        <p class="muted">候補（紫のボタン）を押すと入力欄に追加されます。自由に書き換えてください。A・B・Cのどこから変えるかを考えます。</p>
+        <div class="ba">
+            <div class="ba-col">
+                <h3>いま（Before）</h3>
+                <div class="ba-item"><span class="tag a">A</span><span id="beforeA">―</span></div>
+                <div class="ba-item"><span class="tag b">B</span><span id="beforeB">―</span></div>
+                <div class="ba-item"><span class="tag c">C</span><span id="beforeC">―</span></div>
+            </div>
+            <div class="ba-col">
+                <h3>めざす姿（After）</h3>
+                <label for="newA"><span class="tag a">A</span>きっかけをどう変える？</label>
+                <div class="chips" id="chipsA"></div>
+                <textarea id="newA" placeholder="例：事前に約束事をしてから買い物へ行く"></textarea>
+                <label for="newB"><span class="tag b">B</span>代わりにどんな行動ができたらいい？</label>
+                <div class="chips" id="chipsB"></div>
+                <textarea id="newB" placeholder="例：癇癪を出さずに「1つだけ買っていい？」と交渉する"></textarea>
+                <label for="newC"><span class="tag c">C</span>その行動にどんな結果を返す？</label>
+                <div class="chips" id="chipsC"></div>
+                <textarea id="newC" placeholder="例：約束を守れたらお菓子が手に入る・ほめる"></textarea>
+            </div>
+        </div>
+        <label for="check">うまくいったかの確かめ方 <span class="hint">（何を・どれくらいの期間記録する？）</span></label>
+        <textarea id="check" placeholder="例：2週間、プログラム開始時に泣いた時間と、言葉で伝えられた回数を記録する"></textarea>
+    </section>
+
+    <!-- STEP 4 -->
+    <section class="card">
+        <h2><span class="step">4</span>AIに相談する</h2>
+        <p class="muted">下の文章をコピーして、ChatGPT・Claude などのAIに貼り付けてください。見立ての妥当性、Cが曖昧なときの確かめ方、具体的な支援アイディアを一緒に考えてもらえます。<br>※個人が特定できる情報（氏名・学校名など）は入れないでください。</p>
+        <div class="row no-print">
+            <button onclick="makePrompt()">相談文をつくる</button>
+            <button class="sub" onclick="copyPrompt()">コピーする</button>
+        </div>
+        <div id="prompt" style="margin-top:10px" class="muted">「相談文をつくる」を押すとここに表示されます。</div>
+        <label for="aiMemo">AIの回答・チームで話し合ったことメモ</label>
+        <textarea id="aiMemo" style="min-height:100px" placeholder="AIの提案やケース会議で決まったことを貼り付けておけます"></textarea>
+    </section>
+
+    <!-- STEP 5 -->
+    <section class="card no-print">
+        <h2><span class="step">5</span>保存・印刷</h2>
+        <p class="muted">記録はこの端末のブラウザ内にだけ保存されます。</p>
+        <div class="row">
+            <button onclick="saveRecord()">この内容を保存</button>
+            <button class="sub" onclick="window.print()">印刷・PDF</button>
+        </div>
+        <h3>保存した記録</h3>
+        <ul class="records" id="records"></ul>
+    </section>
+</main>
+
+<script>
+    // ---------- データ定義 ----------
+    const SETTINGS = ['空腹', '睡眠不足', '体調不良', '学校で疲れている', '予定の変更があった', '苦手な人・音・場所', '服薬の変化', '家庭での出来事'];
+
+    // 行動の4つの機能
+    const FUNCTIONS = {
+        tangible: {
+            name: '要求（物・活動がほしい）',
+            short: '物や好きな活動を手に入れる',
+            questions: [
+                '好きな物・活動が手に入らない（取り上げられた・「ダメ」と言われた）ときに起こる',
+                'ほしい物を渡すと、すぐにおさまる',
+                'ほしい物・好きな物が見える場所や、それを思い出す場面で起こりやすい'
+            ],
+            verify: 'ほしい物を「先に」少し渡してから活動に誘ったとき、スムーズに参加できるか？（参加できれば「要求」の可能性が高い）',
+            A: ['事前に約束をしてから始める', '「いつ手に入るか」をスケジュールやカードで見せる', '「〇〇したら△△」のファースト・ゼンカードを使う', 'ほしい物を見えない所にしまう', '先に選択肢を示して選ばせる'],
+            B: ['「〇〇ください」と言葉やカードで要求する', '「1つだけ」「あとで」など交渉する', 'タイマーを見て待つ', '指さし・ジェスチャーで伝える'],
+            C: ['適切に要求できたらすぐに応じる（最初はほぼ毎回）', '交渉・待つことができたら手に入る＋ほめる', '癇癪では手に入らないようにする（一貫させる）', '待てた時間を少しずつのばす']
+        },
+        escape: {
+            name: '逃避・回避（いやなことから逃れたい）',
+            short: '苦手な活動・要求から逃れる',
+            questions: [
+                '苦手な課題・活動や指示を出した直後に起こる',
+                '活動や指示を取り下げる（やらなくてよくなる）と、おさまる',
+                '活動の始まり・切りかえの場面で起こりやすい'
+            ],
+            verify: 'ほしい物を渡しても、なお活動を拒否し続けるか？／活動を本人の好きな内容に変えると拒否がなくなるか？（そうなら「逃避」の可能性が高い）',
+            A: ['5分前・タイマーで予告する', '活動の量や難しさを下げる・小分けにする', '「どれからやる？」と選択肢を出す', '活動の最初に好きな要素を入れる', '休憩カードを用意しておく', '活動の流れを写真・絵で見せる'],
+            B: ['「休憩したい」「あとで」と伝える', '「手伝って」と助けを求める', '最初の1つだけ参加する', '休憩カードを渡す'],
+            C: ['適切に伝えられたら短い休憩を認める', '少しでも参加できたら好きな活動へ（ごほうび）', '泣き叫んで活動がなくなる流れは避ける（量を減らして最後までやる）', '参加できた部分を具体的にほめる']
+        },
+        attention: {
+            name: '注目（かまってほしい・関わってほしい）',
+            short: '大人や友だちの注目を得る',
+            questions: [
+                '大人がほかの子の対応をしていて、自分がかまわれていないときに起こる',
+                '声をかけたり注意したりすると、一時的におさまる（またはかえって増える）',
+                '大人の顔や反応を見ながら行動する'
+            ],
+            verify: '大人がそばにいてこまめに関わっているときにも起こるか？（起こらなければ「注目」の可能性が高い）',
+            A: ['問題が起きる前からこまめに声をかける', 'お手伝いなどの役割を任せる', '待つ時間に関わりのある活動を用意する', '「あとで行くね」と予告して必ず戻る'],
+            B: ['「先生」「見て」と呼ぶ', '肩をトントンして知らせる', '手をあげて待つ'],
+            C: ['適切に呼べたらすぐに応じてたくさんほめる', '問題行動への反応は最小限に（安全確保は優先）', '落ち着いたらすぐに関わる']
+        },
+        sensory: {
+            name: '感覚（その刺激自体が心地よい・不快を避けたい）',
+            short: '感覚刺激を得る・避ける',
+            questions: [
+                'ひとりでいるときや、周りに誰もいないときにも起こる',
+                '周りの反応に関係なく続く',
+                '特定の音・光・におい・触感などがある環境で起こりやすい'
+            ],
+            verify: 'まわりに人がいない・何も求められていない状況でも起こるか？（起こるなら「感覚」の可能性が高い）',
+            A: ['音・光・人の多さなど環境を調整する', 'イヤーマフや静かな場所を用意する', 'スケジュールに感覚遊びの時間を入れる', '空腹・眠気など体の状態を先に整える'],
+            B: ['同じ感覚が得られる適切な遊び・グッズを使う', '「うるさい」「つらい」と伝える', '自分で静かな場所へ移動する'],
+            C: ['代わりの方法で感覚が満たされるようにする', '自分で調整できたらほめる']
+        }
+    };
+
+    // 背景要因（セッティング事象）に応じたAのヒント
+    const SETTING_TIPS = {
+        '空腹': '来所後すぐに補食の時間をとってから活動に入る（空腹という背景を先に解消する）',
+        '睡眠不足': 'その日は活動量を減らす・休める場所を用意する',
+        '体調不良': '体調を確認し、無理をさせない計画に切りかえる',
+        '学校で疲れている': '来所後にクールダウンの時間をとる',
+        '予定の変更があった': '変更点を絵や文字で早めに伝える'
+    };
+
+    const EXAMPLES = [
+        {
+            child: 'Aくん', scene: '休日 家族と買い物',
+            a: '買い物へ行く', b: 'スーパーで癇癪を出す（床に寝転んで泣く）', c: 'お菓子が手に入る', cUnclear: false,
+            freq: 'よくある（週に数回）', intensity: '中くらい（数分続く）', setting: [], settingOther: '',
+            answers: { tangible: [2, 2, 2], escape: [0, 0, 0], attention: [0, 1, 0], sensory: [0, 0, 0] },
+            newA: '事前に約束事をして買い物へ行く（「お菓子は1つだけ」をカードで確認）', newB: '癇癪を出さずに「これ買っていい？」と交渉する', newC: '約束を守れたらお菓子が手に入る・ほめる',
+            check: '2週間、買い物時の癇癪の有無と、言葉で交渉できた回数を記録する'
+        },
+        {
+            child: 'Bさん', scene: '来所後 プログラム開始時',
+            a: 'プログラムが始まることを伝える', b: '補食が食べたいとプログラム参加を拒否し、泣き叫ぶ', c: 'プログラムに参加しない／お腹が満たされる', cUnclear: true,
+            freq: 'よくある（週に数回）', intensity: '強い（長く続く・物や人に向かう）', setting: ['空腹', '学校で疲れている'], settingOther: '',
+            answers: { tangible: [2, 1, 1], escape: [1, null, 2], attention: [0, 0, 0], sensory: [0, 0, 0] },
+            newA: '', newB: '', newC: '', check: ''
+        }
+    ];
+
+    const SCORE_OPTS = [['2', 'はい'], ['1', 'ときどき'], ['0', 'いいえ'], ['', '？']];
+
+    // ---------- 画面の組み立て ----------
+    function buildForm() {
+        document.getElementById('setting').innerHTML = SETTINGS.map((s, i) =>
+            `<label><input type="checkbox" name="setting" value="${s}" id="st${i}"> ${s}</label>`).join('');
+
+        let html = '';
+        for (const [key, fn] of Object.entries(FUNCTIONS)) {
+            html += `<div class="fn-title">${fn.name}</div>`;
+            fn.questions.forEach((q, i) => {
+                html += `<div class="q"><div class="q-text">${q}</div><div class="q-opts">` +
+                    SCORE_OPTS.map(([v, t]) =>
+                        `<label><input type="radio" name="${key}${i}" value="${v}"${v === '' ? ' checked' : ''}> ${t}</label>`).join('') +
+                    `</div></div>`;
+            });
+        }
+        document.getElementById('questions').innerHTML = html;
+
+        ['a', 'b', 'c'].forEach(id => document.getElementById(id).addEventListener('input', updateBefore));
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function val(id) { return document.getElementById(id).value.trim(); }
+
+    function updateBefore() {
+        document.getElementById('beforeA').textContent = val('a') || '―';
+        document.getElementById('beforeB').textContent = val('b') || '―';
+        document.getElementById('beforeC').textContent = val('c') || '―';
+    }
+
+    function getSettings() {
+        return [...document.querySelectorAll('input[name=setting]:checked')].map(e => e.value);
+    }
+
+    function getAnswers() {
+        const answers = {};
+        for (const [key, fn] of Object.entries(FUNCTIONS)) {
+            answers[key] = fn.questions.map((_, i) => {
+                const v = document.querySelector(`input[name=${key}${i}]:checked`).value;
+                return v === '' ? null : Number(v);
+            });
+        }
+        return answers;
+    }
+
+    // 回答済み項目だけで割合を出す
+    function scoreFunctions() {
+        const answers = getAnswers();
+        return Object.entries(FUNCTIONS).map(([key, fn]) => {
+            const known = answers[key].filter(v => v !== null);
+            const pct = known.length ? Math.round(known.reduce((s, v) => s + v, 0) / (known.length * 2) * 100) : null;
+            return { key, fn, pct, answered: known.length };
+        }).sort((x, y) => (y.pct ?? -1) - (x.pct ?? -1));
+    }
+
+    function analyze() {
+        updateBefore();
+        const scores = scoreFunctions();
+        const answeredAny = scores.some(s => s.pct !== null);
+        let html = '<h3>見立ての結果</h3>';
+
+        if (!answeredAny) {
+            document.getElementById('result').innerHTML = html + '<p class="muted">質問に1つ以上答えてください。</p>';
+            return;
+        }
+
+        scores.forEach(s => {
+            const label = s.pct === null ? '未回答' : `${s.pct}%`;
+            html += `<div class="bar-wrap"><div class="bar-label"><span>${s.fn.name}</span><span>${label}</span></div>` +
+                `<div class="bar"><span style="width:${s.pct ?? 0}%"></span></div></div>`;
+        });
+
+        const top = scores.filter(s => s.pct !== null && s.pct >= 50);
+        const first = scores[0], second = scores[1];
+        const close = second.pct !== null && first.pct - second.pct <= 20 && second.pct >= 34;
+
+        if (top.length === 0) {
+            html += '<p>はっきりした傾向はまだ見えません。まずは数日間、ABCを記録して様子を見ましょう。</p>';
+        } else {
+            html += `<p>もっとも可能性が高いのは <b>「${first.fn.name}」</b> です。</p>`;
+        }
+
+        // Cが曖昧、または上位が拮抗しているときは確かめ方を出す
+        if (document.getElementById('cUnclear').checked || close) {
+            const cands = close ? [first, second] : scores.filter(s => s.pct !== null).slice(0, 2);
+            html += '<div class="warn"><b>Cがはっきりしない・目的が複数考えられるとき</b><br>' +
+                '支援をしながら「どちらが本当の報酬か」を確かめてみましょう。1回で決めず、数回試して記録します。' +
+                '<ul class="tips">' + cands.map(s => `<li><b>${s.fn.short}</b>か確かめる：${s.fn.verify}</li>`).join('') + '</ul>' +
+                '<span class="muted">目的が2つ重なっていることもあります（例：空腹を満たしたい＋活動から逃れたい）。その場合は両方に手立てを用意します。</span></div>';
+        }
+
+        const settings = getSettings();
+        const settingTips = settings.filter(s => SETTING_TIPS[s]).map(s => `<li><b>${s}</b>：${SETTING_TIPS[s]}</li>`);
+        if (settingTips.length) {
+            html += '<h3>背景要因への手立て</h3><ul class="tips">' + settingTips.join('') + '</ul>';
+        }
+
+        document.getElementById('result').innerHTML = html;
+
+        // 上位の機能から候補チップを作る
+        const useFns = (top.length ? top : scores.filter(s => s.pct !== null)).slice(0, 2);
+        const extraA = settings.filter(s => SETTING_TIPS[s]).map(s => SETTING_TIPS[s]);
+        renderChips('chipsA', 'newA', [...extraA, ...useFns.flatMap(s => s.fn.A)]);
+        renderChips('chipsB', 'newB', useFns.flatMap(s => s.fn.B));
+        renderChips('chipsC', 'newC', useFns.flatMap(s => s.fn.C));
+    }
+
+    function renderChips(containerId, targetId, items) {
+        const box = document.getElementById(containerId);
+        box.innerHTML = '';
+        [...new Set(items)].forEach(text => {
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.textContent = '＋ ' + text;
+            chip.onclick = () => {
+                const ta = document.getElementById(targetId);
+                ta.value = ta.value.trim() ? ta.value.trim() + '\n・' + text : '・' + text;
+            };
+            box.appendChild(chip);
+        });
+    }
+
+    // ---------- AI相談文 ----------
+    function makePrompt() {
+        updateBefore();
+        const scores = scoreFunctions();
+        const settings = getSettings();
+        if (val('settingOther')) settings.push(val('settingOther'));
+        const scoreText = scores.map(s => `- ${s.fn.name}：${s.pct === null ? '未回答' : s.pct + '%'}`).join('\n');
+        const plan = [val('newA'), val('newB'), val('newC')].some(v => v)
+            ? `\n【支援者が考えた仮説（After）】\nA：${val('newA') || '（未記入）'}\nB：${val('newB') || '（未記入）'}\nC：${val('newC') || '（未記入）'}\n確かめ方：${val('check') || '（未記入）'}\n`
+            : '\n【支援者が考えた仮説】まだありません。一緒に考えてください。\n';
+
+        const text = `あなたは応用行動分析（ABA）に詳しい、児童発達支援・放課後等デイサービスのスーパーバイザーです。
+以下のABC分析をもとに、現場の支援者と一緒に支援の仮説を考えてください。専門用語には短い説明をつけ、明日から現場で試せる具体的な内容でお願いします。
+
+【対象児】${val('child') || '（未記入）'}
+【場面】${val('scene') || '（未記入）'}
+【A きっかけ】${val('a') || '（未記入）'}
+【B 行動】${val('b') || '（未記入）'}
+【C 結果】${val('c') || '（未記入）'}${document.getElementById('cUnclear').checked ? '\n※支援者はCの何が本人にとっての報酬になっているのか判断できていません。' : ''}
+【頻度】${val('freq') || '（未記入）'}　【強さ】${val('intensity') || '（未記入）'}
+【背景要因（セッティング事象）】${settings.length ? settings.join('、') : '特になし'}
+
+【機能チェックの結果（支援者の回答による目安）】
+${scoreText}
+${plan}
+次の順で答えてください。
+1. 行動の機能（目的）の見立て：可能性の高い順に理由とともに。複数の機能が重なっている可能性にも触れてください。
+2. Cが曖昧な場合の確かめ方：どちらが本当の報酬かを現場で見分けるための具体的な観察・試し方。
+3. A（きっかけ・背景要因）への支援アイディア：環境調整、予告、見通し、選択肢など。
+4. B 代わりにできる望ましい行動（代替行動）：同じ目的を、より適切な方法で達成できる行動。本人の発達段階に合う伝え方（言葉・カード・ジェスチャー等）も。
+5. C（結果）への支援アイディア：望ましい行動をどう強化するか、問題行動にはどう対応するか。
+6. 支援計画のまとめ：「A → B → C」をBefore／Afterの形で1つ提案。
+7. 記録と評価の方法：何を、どのくらいの期間記録し、どう判断するか。
+8. 注意点：消去バースト（一時的に行動が強まること）、安全確保、職員間・保護者との対応の統一など。
+${plan.includes('After') ? '\nまた、支援者が考えた仮説（After）の良い点と、改善できる点も教えてください。' : ''}`;
+
+        document.getElementById('prompt').textContent = text;
+        document.getElementById('prompt').classList.remove('muted');
+        return text;
+    }
+
+    function copyPrompt() {
+        const el = document.getElementById('prompt');
+        const text = el.classList.contains('muted') ? makePrompt() : el.textContent;
+        navigator.clipboard.writeText(text).then(() => alert('コピーしました！AIに貼り付けてください。'));
+    }
+
+    // ---------- 保存・読み込み ----------
+    const STORE_KEY = 'aba-abc-records';
+    const FIELDS = ['child', 'scene', 'a', 'b', 'c', 'freq', 'intensity', 'settingOther', 'newA', 'newB', 'newC', 'check', 'aiMemo'];
+
+    function collect() {
+        const data = {};
+        FIELDS.forEach(f => data[f] = document.getElementById(f).value);
+        data.cUnclear = document.getElementById('cUnclear').checked;
+        data.setting = getSettings();
+        data.answers = getAnswers();
+        return data;
+    }
+
+    function apply(data) {
+        FIELDS.forEach(f => document.getElementById(f).value = data[f] || '');
+        document.getElementById('cUnclear').checked = !!data.cUnclear;
+        document.querySelectorAll('input[name=setting]').forEach(e => e.checked = (data.setting || []).includes(e.value));
+        for (const key of Object.keys(FUNCTIONS)) {
+            FUNCTIONS[key].questions.forEach((_, i) => {
+                const v = data.answers && data.answers[key] ? data.answers[key][i] : null;
+                const value = v === null || v === undefined ? '' : String(v);
+                document.querySelector(`input[name=${key}${i}][value="${value}"]`).checked = true;
+            });
+        }
+        updateBefore();
+        analyze();
+        document.getElementById('prompt').textContent = '「相談文をつくる」を押すとここに表示されます。';
+        document.getElementById('prompt').classList.add('muted');
+    }
+
+    function loadExample(i) { apply(EXAMPLES[i]); }
+
+    function resetAll() {
+        if (!confirm('入力内容をすべて消しますか？')) return;
+        apply({});
+        document.getElementById('result').innerHTML = '';
+        ['chipsA', 'chipsB', 'chipsC'].forEach(id => document.getElementById(id).innerHTML = '');
+    }
+
+    function loadRecords() {
+        try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch (e) { return []; }
+    }
+
+    function saveRecord() {
+        const data = collect();
+        data.savedAt = new Date().toLocaleString('ja-JP');
+        const records = loadRecords();
+        records.unshift(data);
+        try {
+            localStorage.setItem(STORE_KEY, JSON.stringify(records));
+            alert('保存しました。');
+        } catch (e) {
+            alert('この端末では保存できませんでした。');
+        }
+        renderRecords();
+    }
+
+    function deleteRecord(i) {
+        if (!confirm('この記録を削除しますか？')) return;
+        const records = loadRecords();
+        records.splice(i, 1);
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(records)); } catch (e) {}
+        renderRecords();
+    }
+
+    function renderRecords() {
+        const records = loadRecords();
+        const list = document.getElementById('records');
+        if (!records.length) { list.innerHTML = '<li class="muted">まだありません</li>'; return; }
+        list.innerHTML = records.map((r, i) =>
+            `<li>${escapeHtml(r.savedAt || '')}　<b>${escapeHtml(r.child || '（名前なし）')}</b>　${escapeHtml((r.b || '').slice(0, 30))}
+             <button class="sub small" onclick="apply(loadRecords()[${i}])">開く</button>
+             <button class="sub small" onclick="deleteRecord(${i})">削除</button></li>`).join('');
+    }
+
+    buildForm();
+    renderRecords();
+</script>
+</body>
+</html>
